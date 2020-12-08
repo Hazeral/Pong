@@ -1,10 +1,17 @@
 #pragma once
 #include <SDL/SDL.h>
 #include <wtypes.h>
+#include <vector>
 
 struct Vector2 {
     float x;
     float y;
+};
+
+struct Ball {
+    Vector2 Position;
+    Vector2 Velocity;
+    int Radius;
 };
 
 class Game
@@ -30,7 +37,6 @@ private:
     int mWinWidth;
     int mWinHeight;
     int mWallThickness;
-    int mBallRadius;
     int mPaddleHeight;
     int mPaddleDirection; // 0 = stationary, -1 = up, 1 = down
     int mBotPaddleDirection;
@@ -38,7 +44,7 @@ private:
     // Center anchor
     Vector2 mPaddlePos;
     Vector2 mBotPaddlePos;
-    Vector2 mBallPos;
-    Vector2 mBallVelocity;
+    
+    std::vector<Ball> mBalls;
 };
 

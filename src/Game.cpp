@@ -28,13 +28,33 @@ Game::Game(int width, int height) {
 
     mTicksCount = 0;
     mWallThickness = 15;
-    mBallRadius = 10;
     mPaddleHeight = 100;
     mPaddleSpeed = 300.0f;
     mPaddlePos = { static_cast<float>(mWallThickness), static_cast<float>(mWinHeight / 2) }; // mWallThickness will give a slight margin from the left
     mBotPaddlePos = { static_cast<float>(mWinWidth - mWallThickness), static_cast<float>(mWinHeight / 2) };
-    mBallPos = { static_cast<float>(mWinWidth / 2), static_cast<float>(mWinHeight / 2) };
-    mBallVelocity = { -200.0f, 235.0f };
+
+    Ball ballOne = { 
+        { static_cast<float>(mWinWidth / 2), static_cast<float>(mWinHeight / 2) },
+        { -200.0f, 235.0f },
+        10
+    };
+    
+    mBalls = { 
+        {
+            {
+                static_cast<float>(mWinWidth / 2),
+                static_cast<float>(mWinHeight / 2)
+            },
+            { -200.0f, 235.0f }, 10
+        },
+        {
+            {
+                static_cast<float>(mWinWidth / 2),
+                static_cast<float>(mWinHeight / 2)
+            },
+            { -200.0f, 200.0f }, 10
+        }
+    };
 }
 
 bool Game::Initialise() {
@@ -105,8 +125,18 @@ void Game::ProcessInput() {
     if (state[SDL_SCANCODE_S] || state[SDL_SCANCODE_DOWN]) mPaddleDirection += 1;
 
     // Bot movement
-    if (mBotPaddlePos.y < mBallPos.y && mBallPos.x > mWinWidth - (mWinWidth / 4)) mBotPaddleDirection += 1;
-    else if (mBotPaddlePos.y > mBallPos.y && mBallPos.x > mWinWidth - (mWinWidth / 4)) mBotPaddleDirection -= 1;
+    Ball* closestBall = &mBalls[0];
+
+    for (size_t i = 1; i < mBalls.size(); i++) {
+        Ball* ball = &mBalls[i];
+
+        if (ball->Position.x > closestBall->Position.x) closestBall = ball;
+    }
+
+    if (closestBall->Position.x > mWinWidth - (mWinWidth / 3) && closestBall->Velocity.x > 0) {
+        if (mBotPaddlePos.y < closestBall->Position.y) mBotPaddleDirection += 1;
+        else if (mBotPaddlePos.y > closestBall->Position.y) mBotPaddleDirection -= 1;
+    }
 }
 
 void Game::UpdateGame() {
@@ -139,59 +169,63 @@ void Game::UpdateGame() {
         }
     }
 
-    mBallPos.x += mBallVelocity.x * deltaTime;
-    mBallPos.y += mBallVelocity.y * deltaTime;
-    
-    // Ball collisions
-    if (mBallPos.y - mBallRadius <= mWallThickness || mBallPos.y + mBallRadius >= mWinHeight - mWallThickness)
-    {
-        mBallVelocity.y *= -1;
-    }
-    else if ( // This could probably be significantly improved
-         (
-            (
-                ( // Ball is within the paddle
-                    mBallPos.y + mBallRadius <= mPaddlePos.y + (mPaddleHeight / 2) &&
-                    mBallPos.y - mBallRadius >= mPaddlePos.y - (mPaddleHeight / 2)
-                ) ||
-                ( // Bottom edge of ball in paddle
-                    mBallPos.y + mBallRadius <= mPaddlePos.y + (mPaddleHeight / 2) &&
-                    mBallPos.y + mBallRadius >= mPaddlePos.y - (mPaddleHeight / 2)
-                ) ||
-                ( // Top edge of ball in paddle
-                    mBallPos.y - mBallRadius >= mPaddlePos.y - (mPaddleHeight / 2) &&
-                    mBallPos.y - mBallRadius <= mPaddlePos.y + (mPaddleHeight / 2)
-                )
-            ) &&
-            mBallPos.x <= mPaddlePos.x + mWallThickness &&
-            mBallPos.x >= mPaddlePos.x - (mWallThickness / 2.0f) &&
-            mBallVelocity.x < 0.0f
-         ) ||
-         ( // Bot paddle
-             (
-                 (
-                     mBallPos.y + mBallRadius <= mBotPaddlePos.y + (mPaddleHeight / 2) &&
-                     mBallPos.y - mBallRadius >= mBotPaddlePos.y - (mPaddleHeight / 2)
-                 ) ||
-                 (
-                     mBallPos.y + mBallRadius <= mBotPaddlePos.y + (mPaddleHeight / 2) &&
-                     mBallPos.y + mBallRadius >= mBotPaddlePos.y - (mPaddleHeight / 2)
-                 ) ||
-                 (
-                     mBallPos.y - mBallRadius >= mBotPaddlePos.y - (mPaddleHeight / 2) &&
-                     mBallPos.y - mBallRadius <= mBotPaddlePos.y + (mPaddleHeight / 2)
-                 )
-             ) &&
-             mBallPos.x <= mBotPaddlePos.x + (mWallThickness / 2.0f) &&
-             mBallPos.x >= mBotPaddlePos.x - (mWallThickness * 1.5f) &&
-             mBallVelocity.x > 0.0f
-         )
-    )
-    {
-        mBallVelocity.x *= -1;
-    }
+    for (size_t i = 0; i < mBalls.size(); i++) {
+        Ball* ball = &mBalls[i];
 
-    if (mBallPos.x < 0 || mBallPos.x > mWinWidth) mBallPos = { static_cast<float>(mWinWidth / 2), static_cast<float>(mWinHeight / 2) }; // Reset ball if out of bounds
+        ball->Position.x += ball->Velocity.x * deltaTime;
+        ball->Position.y += ball->Velocity.y * deltaTime;
+
+        // Ball collisions
+        if (ball->Position.y - ball->Radius <= mWallThickness || ball->Position.y + ball->Radius >= mWinHeight - mWallThickness)
+        {
+            ball->Velocity.y *= -1;
+        }
+        else if ( // This could probably be significantly improved
+            (
+                (
+                    ( // Ball is within the paddle
+                        ball->Position.y + ball->Radius <= mPaddlePos.y + (mPaddleHeight / 2) &&
+                        ball->Position.y - ball->Radius >= mPaddlePos.y - (mPaddleHeight / 2)
+                        ) ||
+                    ( // Bottom edge of ball in paddle
+                        ball->Position.y + ball->Radius <= mPaddlePos.y + (mPaddleHeight / 2) &&
+                        ball->Position.y + ball->Radius >= mPaddlePos.y - (mPaddleHeight / 2)
+                        ) ||
+                    ( // Top edge of ball in paddle
+                        ball->Position.y - ball->Radius >= mPaddlePos.y - (mPaddleHeight / 2) &&
+                        ball->Position.y - ball->Radius <= mPaddlePos.y + (mPaddleHeight / 2)
+                        )
+                    ) &&
+                ball->Position.x <= mPaddlePos.x + mWallThickness &&
+                ball->Position.x >= mPaddlePos.x - (mWallThickness / 2.0f) &&
+                ball->Velocity.x < 0.0f
+                ) ||
+            ( // Bot paddle
+                (
+                    (
+                        ball->Position.y + ball->Radius <= mBotPaddlePos.y + (mPaddleHeight / 2) &&
+                        ball->Position.y - ball->Radius >= mBotPaddlePos.y - (mPaddleHeight / 2)
+                        ) ||
+                    (
+                        ball->Position.y + ball->Radius <= mBotPaddlePos.y + (mPaddleHeight / 2) &&
+                        ball->Position.y + ball->Radius >= mBotPaddlePos.y - (mPaddleHeight / 2)
+                        ) ||
+                    (
+                        ball->Position.y - ball->Radius >= mBotPaddlePos.y - (mPaddleHeight / 2) &&
+                        ball->Position.y - ball->Radius <= mBotPaddlePos.y + (mPaddleHeight / 2)
+                        )
+                    ) &&
+                ball->Position.x <= mBotPaddlePos.x + (mWallThickness / 2.0f) &&
+                ball->Position.x >= mBotPaddlePos.x - (mWallThickness * 1.5f) &&
+                ball->Velocity.x > 0.0f
+                )
+            )
+        {
+            ball->Velocity.x *= -1;
+        }
+
+        if (ball->Position.x < 0 || ball->Position.x > mWinWidth) ball->Position = { static_cast<float>(mWinWidth / 2), static_cast<float>(mWinHeight / 2) }; // Reset ball if out of bounds
+    }
 }
 
 void Game::GenerateOutput() {
@@ -222,11 +256,6 @@ void Game::GenerateOutput() {
         static_cast<int>(mBotPaddlePos.y - (mPaddleHeight / 2)),
         mWallThickness, mPaddleHeight };
 
-    SDL_Rect ball{
-        static_cast<int>(mBallPos.x - (mWallThickness / 2)),
-        static_cast<int>(mBallPos.y - (mWallThickness / 2)),
-        mBallRadius * 2, mBallRadius * 2 };
-
     SDL_SetRenderDrawColor(mRenderer, 0, 0, 255, 255);
     SDL_RenderFillRect(mRenderer, &topWall);
     SDL_RenderFillRect(mRenderer, &bottomWall);
@@ -237,7 +266,16 @@ void Game::GenerateOutput() {
     SDL_RenderFillRect(mRenderer, &bot);
 
     SDL_SetRenderDrawColor(mRenderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(mRenderer, &ball);
+    for (size_t i = 0; i < mBalls.size(); i++) {
+        Ball* ball = &mBalls[i];
+
+        SDL_Rect ballRect {
+            static_cast<int>(ball->Position.x - (mWallThickness / 2)),
+            static_cast<int>(ball->Position.y - (mWallThickness / 2)),
+            ball->Radius * 2, ball->Radius * 2 };
+
+        SDL_RenderFillRect(mRenderer, &ballRect);
+    }
 
     SDL_RenderPresent(mRenderer); // Swap the two colour buffers
 }
