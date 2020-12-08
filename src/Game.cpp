@@ -183,7 +183,7 @@ void Game::UpdateGame() {
                  )
              ) &&
              mBallPos.x <= mBotPaddlePos.x + (mWallThickness / 2.0f) &&
-             mBallPos.x >= mBotPaddlePos.x - (mWallThickness / 2.0f) &&
+             mBallPos.x >= mBotPaddlePos.x - (mWallThickness * 1.5f) &&
              mBallVelocity.x > 0.0f
          )
     )
