@@ -163,7 +163,7 @@ void Game::UpdateGame() {
                     mBallPos.y - mBallRadius <= mPaddlePos.y + (mPaddleHeight / 2)
                 )
             ) &&
-            mBallPos.x <= mPaddlePos.x + (mWallThickness / 2.0f) &&
+            mBallPos.x <= mPaddlePos.x + mWallThickness &&
             mBallPos.x >= mPaddlePos.x - (mWallThickness / 2.0f) &&
             mBallVelocity.x < 0.0f
          ) ||
