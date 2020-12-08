@@ -2,4 +2,4 @@ Player (Green paddle) is controlled using Up/Down or W/S. Red paddle is controll
 
 ![preview](https://i.imgur.com/B3N0EHy.gif)
 
-Note: Code may be a little messy as I haven't made much use of classes for the game entities
+Note: Code may be a little messy as I haven't made much use of classes for the game entities (the game was made to help understand the basics of SDL and I didn't focus on scalability)
