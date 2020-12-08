@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL/SDL.h>
+#include <wtypes.h>
 
 struct Vector2 {
     float x;

@@ -1,5 +1,4 @@
 #include "Game.h"
-#include <wtypes.h>
 
 int screenWidth;
 int screenHeight;
