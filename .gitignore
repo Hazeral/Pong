@@ -1,5 +1,5 @@
-Debug/
-Release/
-!Debug/SDL2.dll
-!Release/SDL2.dll
+/Debug/**
+/Release/**
+!/Debug/SDL2.dll
+!/Release/SDL2.dll
 .vs/
